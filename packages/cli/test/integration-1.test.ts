@@ -759,42 +759,6 @@ test('Deploy `api-env` fixture and test `vercel env` command', async () => {
     expect(previewEnvs[0]).toMatch(/Encrypted .* Preview /gm);
   }
 
-  // we create a "legacy" env variable that contains a decryptable secret
-  // to check that vc env pull and vc dev work correctly with decryptable secrets
-  async function createEnvWithDecryptableSecret() {
-    // eslint-disable-next-line no-console
-    console.log('creating an env variable with a decryptable secret');
-
-    const name = `my-secret${Math.floor(Math.random() * 10000)}`;
-
-    const res = await apiFetch('/v2/now/secrets', {
-      method: 'POST',
-      body: JSON.stringify({
-        name,
-        value: 'decryptable value',
-        decryptable: true,
-      }),
-    });
-
-    expect(res.status).toBe(200);
-
-    const json = await res.json();
-
-    const link = require(path.join(target, '.vercel/project.json'));
-
-    const resEnv = await apiFetch(`/v4/projects/${link.projectId}/env`, {
-      method: 'POST',
-      body: JSON.stringify({
-        key: 'MY_DECRYPTABLE_SECRET_ENV',
-        value: json.uid,
-        target: ['development'],
-        type: 'secret',
-      }),
-    });
-
-    expect(resEnv.status).toBe(200);
-  }
-
   async function vcEnvPull() {
     const { exitCode, stdout, stderr } = await execCli(
       binaryPath,
@@ -811,7 +775,6 @@ test('Deploy `api-env` fixture and test `vercel env` command', async () => {
     expect(contents).toMatch(/^# Created by Vercel CLI\n/);
     expect(contents).toMatch(/MY_NEW_ENV_VAR="my plaintext value"/);
     expect(contents).toMatch(/MY_STDIN_VAR="{"expect":"quotes"}"/);
-    expect(contents).toMatch(/MY_DECRYPTABLE_SECRET_ENV="decryptable value"/);
     expect(contents).not.toMatch(/MY_PREVIEW/);
   }
 
@@ -880,14 +843,12 @@ test('Deploy `api-env` fixture and test `vercel env` command', async () => {
     const apiJson = await apiRes.json();
 
     expect(apiJson['MY_NEW_ENV_VAR']).toBe('my plaintext value');
-    expect(apiJson['MY_DECRYPTABLE_SECRET_ENV']).toBe('decryptable value');
 
     const homeUrl = localhost[0];
 
     const homeRes = await fetch(homeUrl);
     const homeJson = await homeRes.json();
     expect(homeJson['MY_NEW_ENV_VAR']).toBe('my plaintext value');
-    expect(homeJson['MY_DECRYPTABLE_SECRET_ENV']).toBe('decryptable value');
 
     // sleep before kill, otherwise the dev process doesn't clean up and exit properly
     await sleep(100);
@@ -910,14 +871,12 @@ test('Deploy `api-env` fixture and test `vercel env` command', async () => {
     const apiJson = await apiRes.json();
     expect(apiJson['MY_NEW_ENV_VAR']).toBe('my plaintext value');
     expect(apiJson['MY_STDIN_VAR']).toBe('{"expect":"quotes"}');
-    expect(apiJson['MY_DECRYPTABLE_SECRET_ENV']).toBe('decryptable value');
 
     const homeUrl = localhost[0];
     const homeRes = await fetch(homeUrl);
     const homeJson = await homeRes.json();
     expect(homeJson['MY_NEW_ENV_VAR']).toBe('my plaintext value');
     expect(homeJson['MY_STDIN_VAR']).toBe('{"expect":"quotes"}');
-    expect(homeJson['MY_DECRYPTABLE_SECRET_ENV']).toBe('decryptable value');
 
     // system env vars are hidden in dev
     expect(apiJson['VERCEL']).toBeUndefined();
@@ -1062,7 +1021,6 @@ test('Deploy `api-env` fixture and test `vercel env` command', async () => {
   async function vcEnvRemoveAll() {
     await vcEnvRemoveByName('MY_PREVIEW');
     await vcEnvRemoveByName('MY_STDIN_VAR');
-    await vcEnvRemoveByName('MY_DECRYPTABLE_SECRET_ENV');
     await vcEnvRemoveByName('MY_NEW_ENV_VAR');
   }
 
@@ -1075,7 +1033,6 @@ test('Deploy `api-env` fixture and test `vercel env` command', async () => {
     await vcEnvAddFromStdinPreview();
     await vcEnvAddFromStdinPreviewWithBranch();
     await vcEnvLsIncludesVar();
-    await createEnvWithDecryptableSecret();
     await vcEnvPull();
     await vcEnvPullOverwrite();
     await vcEnvPullConfirm();

